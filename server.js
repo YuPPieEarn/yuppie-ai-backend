@@ -6,7 +6,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Yapay Zeka Modelleri Haritası
 const MODELS = {
     'gemini': 'google/gemini-2.5-flash',
     'claude': 'anthropic/claude-3.5-sonnet',
@@ -14,77 +13,79 @@ const MODELS = {
     'deepseek': 'deepseek/deepseek-chat'
 };
 
-// Eşleştirme Kodlarını Saklama Alanı (Geçici Hafıza)
 const syncCodes = new Map();
 const activeTokens = new Map();
+const taskQueue = new Map();
 
-// 1. Ana Sayfa Kontrolü
 app.get('/', (req, res) => {
     res.send("YuPPie AI Multi-Server v3.0 Aktif ve Çalışıyor!");
 });
 
-// 2. Web Siteden Eşleştirme Kodu Üretme (/api/create-code)
 app.post('/api/create-code', (req, res) => {
     try {
         const code = "YP-" + Math.floor(100000 + Math.random() * 900000);
-        
-        // Kodu 5 dakikalık geçerlilik süresiyle hafızaya kaydet
-        syncCodes.set(code, {
-            createdAt: Date.now()
-        });
-
-        // 5 dakika sonra otomatik sil
+        syncCodes.set(code, { createdAt: Date.now() });
         setTimeout(() => syncCodes.delete(code), 5 * 60 * 1000);
-
-        console.log(`[YuPPie Sync] Yeni kod üretildi: ${code}`);
         res.json({ success: true, code: code });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// 3. Studio Plugin'den Kodu Doğrulama (/api/verify-code)
 app.post('/api/verify-code', (req, res) => {
     try {
         const { code } = req.body;
         const sessionData = syncCodes.get(code);
-
         if (!sessionData) {
             return res.status(400).json({ success: false, error: "Geçersiz veya süresi dolmuş kod!" });
         }
-
-        // Kullanıcıya özel benzersiz token oluştur
         const token = "YP_TOKEN_" + Math.random().toString(36).substring(2) + Date.now();
         activeTokens.set(token, true);
-
-        // Kullanılan tek seferlik kodu sil
         syncCodes.delete(code);
-
-        console.log(`[YuPPie Sync] Kod doğrulandı, Token oluşturuldu: ${token}`);
         res.json({ success: true, token: token });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// 4. Script Üretme Endpoint'i (/generate-script)
+app.post('/api/send-task', (req, res) => {
+    try {
+        const { token, prompt, model, apiKey } = req.body;
+        if (!token || !activeTokens.has(token)) {
+            return res.status(401).json({ success: false, error: "Geçersiz veya eşleşmemiş token!" });
+        }
+        taskQueue.set(token, { prompt, model: model || 'gemini', apiKey, status: 'pending' });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/fetch-task', (req, res) => {
+    try {
+        const { token } = req.body;
+        if (taskQueue.has(token)) {
+            const task = taskQueue.get(token);
+            taskQueue.delete(token);
+            res.json({ success: true, task: task });
+        } else {
+            res.json({ success: false });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 app.post('/generate-script', async (req, res) => {
     try {
         const { prompt, provider = 'gemini', userKey } = req.body;
-
-        // Render Panelindeki Ana API Key'i alır
-        const apiKey = process.env.OPENROUTER_API_KEY;
+        const apiKey = userKey || process.env.OPENROUTER_API_KEY;
 
         if (!apiKey) {
-            return res.status(400).json({ 
-                success: false, 
-                error: "Render üzerinde OPENROUTER_API_KEY tanımlı değil!" 
-            });
+            return res.status(400).json({ success: false, error: "API Key tanımlı değil!" });
         }
 
         const selectedModel = MODELS[provider] || MODELS['gemini'];
-
-        console.log(`[YuPPie AI] İstek işleniyor. Model: ${selectedModel}`);
 
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
@@ -120,7 +121,6 @@ app.post('/generate-script', async (req, res) => {
 
         res.json({ success: true, code: cleanCode, usedModel: selectedModel });
     } catch (error) {
-        console.error("Hata:", error.message);
         res.status(500).json({ success: false, error: error.message });
     }
 });
