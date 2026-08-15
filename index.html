@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YuPPie AI - Multi Studio Hub</title>
+    <title>YuPPie AI - SaaS Studio Hub</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; }
@@ -31,14 +31,21 @@
         
         .content-body { padding: 40px; flex: 1; overflow-y: auto; }
 
-        /* Bağlantı Kartı */
-        .sync-card { background: #16161a; border: 1px solid #27272a; border-radius: 16px; padding: 40px; text-align: center; max-width: 500px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .sync-card h2 { color: #fff; margin-bottom: 15px; }
-        .sync-card p { color: #a1a1aa; line-height: 1.6; margin-bottom: 30px; }
-        .btn-primary { background: linear-gradient(135deg, #a855f7, #7c3aed); color: #fff; border: none; padding: 14px 28px; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; width: 100%; }
+        /* Kart ve Form Elemanları */
+        .card { background: #16161a; border: 1px solid #27272a; border-radius: 16px; padding: 35px; max-width: 650px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .card h2 { color: #fff; margin-bottom: 15px; font-size: 20px; }
+        .card p { color: #a1a1aa; line-height: 1.6; margin-bottom: 25px; font-size: 14px; }
+        
+        .form-group { margin-bottom: 20px; text-align: left; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #a1a1aa; margin-bottom: 8px; }
+        .form-control { width: 100%; background: #0f0f12; border: 1px solid #27272a; border-radius: 10px; padding: 14px; color: #fff; font-size: 14px; outline: none; transition: 0.2s; }
+        .form-control:focus { border-color: #a855f7; }
+        textarea.form-control { resize: none; height: 120px; }
+
+        .btn-primary { background: linear-gradient(135deg, #a855f7, #7c3aed); color: #fff; border: none; padding: 14px 28px; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.2s; width: 100%; }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(168, 85, 247, 0.4); }
         
-        .code-display { font-size: 36px; font-weight: 900; color: #a855f7; margin-top: 25px; letter-spacing: 5px; background: #0f0f12; padding: 20px; border-radius: 12px; border: 1px dashed #3f3f46; display: none; }
+        .code-display { font-size: 32px; font-weight: 900; color: #a855f7; margin-top: 20px; letter-spacing: 4px; background: #0f0f12; padding: 15px; border-radius: 12px; border: 1px dashed #3f3f46; text-align: center; display: none; }
     </style>
 </head>
 <body>
@@ -51,6 +58,7 @@
             </div>
             <ul class="nav-list">
                 <li class="nav-item active" onclick="switchTab('syncTab', this)"><i class="fa-solid fa-link"></i> Studio Bağlantısı</li>
+                <li class="nav-item" onclick="switchTab('controlTab', this)"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Kontrol Paneli</li>
                 <li class="nav-item" onclick="switchTab('infoTab', this)"><i class="fa-solid fa-circle-info"></i> Sistem Bilgisi</li>
             </ul>
         </div>
@@ -58,7 +66,7 @@
             <div class="dot"></div>
             <div>
                 <div style="font-weight:bold; color:#fff;">Sistem Aktif</div>
-                <div style="color:#a1a1aa; font-size:11px;">Bağlantı Kuruldu</div>
+                <div style="color:#a1a1aa; font-size:11px;">Bulut Bağlantısı Hazır</div>
             </div>
         </div>
     </div>
@@ -66,32 +74,64 @@
     <div class="main-content">
         <!-- BAĞLANTI SEKMESİ -->
         <div id="syncTab" class="tab-content active">
-            <div class="header">
-                <h1>Hesap Eşleştirme (Pairing)</h1>
-            </div>
+            <div class="header"><h1>Hesap Eşleştirme (Pairing)</h1></div>
             <div class="content-body">
-                <div class="sync-card">
+                <div class="card" style="text-align: center;">
                     <i class="fa-solid fa-plug" style="font-size: 40px; color: #a855f7; margin-bottom: 20px;"></i>
-                    <h2>Roblox Studio'ya Bağlan</h2>
-                    <p>Eklentiyi Studio'da tam yetkiyle kullanmak için aşağıdaki butona basarak tek seferlik güvenli eşleştirme kodunu al ve YuPPie eklentisine yapıştır.</p>
-                    
+                    <h2>Roblox Studio ile Eşleştir</h2>
+                    <p>Studio eklentini web paneline bağlamak için aşağıdaki butona bas ve çıkan kodu eklenti paneline gir.</p>
                     <button class="btn-primary" id="generateBtn" onclick="generateCode()">Eşleştirme Kodu Üret</button>
                     <div class="code-display" id="codeDisplay">YP-000000</div>
-                    <p id="statusText" style="margin-top: 15px; font-size: 12px; color: #22c55e; display: none;">Kod başarıyla üretildi. 5 dakika boyunca geçerlidir.</p>
+                    <p id="statusText" style="margin-top: 15px; font-size: 12px; color: #22c55e; display: none;">Kod üretildi! 5 dakika içinde Studio'ya girerek eşleştir.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- KONTROL PANELİ SEKMESİ -->
+        <div id="controlTab" class="tab-content">
+            <div class="header"><h1>AI Kontrol Paneli (SaaS Hub)</h1></div>
+            <div class="content-body">
+                <div class="card">
+                    <h2>Stüdyo Komuta Merkezi</h2>
+                    <p>Buradan doğrudan açık olan Roblox Studio oturumuna görev gönderebilirsin.</p>
+                    
+                    <div class="form-group">
+                        <label>Oturum Token (Studio Eşleşme Sonrası Otomatik Tanımlanır)</label>
+                        <input type="text" id="userToken" class="form-control" placeholder="Örn: YP_TOKEN_xyz...">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Özel API Key (Opsiyonel - Boş bırakırsan sistem anahtarı kullanılır)</label>
+                        <input type="password" id="customApiKey" class="form-control" placeholder="OpenRouter veya Gemini API Key">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Yapay Zeka Modeli Seç</label>
+                        <select id="modelSelect" class="form-control">
+                            <option value="gemini">Gemini 2.5 Flash</option>
+                            <option value="claude">Claude 3.5 Sonnet</option>
+                            <option value="gpt4">GPT-4o</option>
+                            <option value="deepseek">DeepSeek Chat</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Yapay Zekaya Komut / İstek Ver</label>
+                        <textarea id="promptInput" class="form-control" placeholder="Örn: Oyuncunun hızını artıran bir data store sistemi yaz..."></textarea>
+                    </div>
+
+                    <button class="btn-primary" onclick="sendTaskToStudio()">STUDIOYA KOD GÖNDER</button>
                 </div>
             </div>
         </div>
 
         <!-- BİLGİ SEKMESİ -->
         <div id="infoTab" class="tab-content">
-            <div class="header">
-                <h1>Sistem Bilgisi</h1>
-            </div>
+            <div class="header"><h1>Sistem Bilgisi</h1></div>
             <div class="content-body">
-                <div class="sync-card" style="text-align: left;">
-                    <h3 style="color: #a855f7; margin-bottom: 10px;">Gelişmiş Multi-AI Altyapısı</h3>
-                    <p>YuPPie AI eklentisi, doğrudan Roblox Studio içinden <b>Gemini 2.5 Flash, Claude 3.5 Sonnet, GPT-4o ve DeepSeek</b> motorlarına erişim sağlar.</p>
-                    <p>Yazdığınız komutlar yapay zeka tarafından işlenir ve doğrudan ServerScriptService içine kopyalanabilir temiz Luau kodları olarak aktarılır.</p>
+                <div class="card">
+                    <h3 style="color: #a855f7; margin-bottom: 10px;">Gelişmiş Çoklu Model Altyapısı</h3>
+                    <p>YuPPie AI SaaS altyapısı; tarayıcı tabanlı kontrol merkezi ile Roblox Studio eklentisini anlık olarak senkronize eder.</p>
                 </div>
             </div>
         </div>
@@ -119,23 +159,49 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({})
                 });
-                
                 const data = await res.json();
-                
                 if(data.success) {
                     display.textContent = data.code;
                     display.style.display = "block";
                     status.style.display = "block";
                     btn.style.display = "none";
                 } else {
-                    alert("Hata: Kod üretilemedi.");
+                    alert("Kod üretilemedi.");
                     btn.textContent = "Tekrar Dene";
                     btn.disabled = false;
                 }
             } catch(e) {
-                alert("Bağlantı hatası! Render sunucun açık mı kontrol et.");
+                alert("Sunucuya bağlanılamadı.");
                 btn.textContent = "Eşleştirme Kodu Üret";
                 btn.disabled = false;
+            }
+        }
+
+        async function sendTaskToStudio() {
+            const token = document.getElementById('userToken').value.trim();
+            const prompt = document.getElementById('promptInput').value.trim();
+            const model = document.getElementById('modelSelect').value;
+            const apiKey = document.getElementById('customApiKey').value.trim();
+
+            if(!token || !prompt) {
+                alert("Lütfen Token ve Komut alanlarını doldurun!");
+                return;
+            }
+
+            try {
+                const res = await fetch("https://yuppie-ai-backend.onrender.com/api/send-task", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ token, prompt, model, apiKey })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    alert("Görev başarıyla Studio kuyruğuna iletildi! Studio açıkken kod otomatik oluşturulacak.");
+                } else {
+                    alert("Hata: " + (data.error || "Görev iletilemedi."));
+                }
+            } catch(e) {
+                alert("Sunucu bağlantı hatası!");
             }
         }
     </script>
